@@ -1,7 +1,17 @@
-const SUPABASE_URL = 'https://dkyqegxdcerlqnfvodjd.supabase.co';  // ЗАМЕНИТЕ!
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRreXFlZ3hkY2VybHFuZnZvZGpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTc2NzQsImV4cCI6MjA4NTYzMzY3NH0.n6KO-IQMZboeOMCnJQw6gAs8DdWFDZpevAOWBQrxFWA';  // ЗАМЕНИТЕ!
+// scripts/auth.js
+console.log('Auth script loaded');
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = 'https://dkyqegxdcerlqnfvodjd.supabase.co';  // ЗАМЕНИТЕ НА ВАШ!
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRreXFlZ3hkY2VybHFuZnZvZGpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTc2NzQsImV4cCI6MjA4NTYzMzY3NH0.n6KO-IQMZboeOMCnJQw6gAs8DdWFDZpevAOWBQrxFWA';  // ЗАМЕНИТЕ НА ВАШ!
+
+let supabase;
+
+try {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('Supabase client created');
+} catch (error) {
+    console.error('Failed to create Supabase client:', error);
+}
 
 class AuthSystem {
     constructor() {
@@ -12,27 +22,42 @@ class AuthSystem {
     }
 
     async init() {
+        console.log('AuthSystem initializing...');
         this.setupEventListeners();
         await this.checkSession();
     }
 
     setupEventListeners() {
-        // Переключение форм
-        document.getElementById('btn-switch-form').addEventListener('click', () => {
-            this.toggleFormMode();
-        });
+        console.log('Setting up event listeners...');
+        
+        const switchBtn = document.getElementById('btn-switch-form');
+        if (switchBtn) {
+            switchBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.toggleFormMode();
+            });
+            console.log('Switch button listener added');
+        }
 
-        // Отправка формы входа
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleLogin();
-        });
+        const loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('Login form submitted');
+                this.handleLogin();
+            });
+            console.log('Login form listener added');
+        }
 
-        // Отправка формы регистрации
-        document.getElementById('register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRegister();
-        });
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('Register form submitted');
+                this.handleRegister();
+            });
+            console.log('Register form listener added');
+        }
     }
 
     toggleFormMode() {
@@ -55,11 +80,14 @@ class AuthSystem {
         }
 
         this.showError('');
+        console.log('Form mode toggled to:', this.isLoginMode ? 'login' : 'register');
     }
 
     async handleLogin() {
         const username = document.getElementById('login-username').value;
         const password = document.getElementById('login-password').value;
+
+        console.log('Login attempt:', { username, password });
 
         if (!username || !password) {
             this.showError('Заполните все поля');
@@ -67,40 +95,51 @@ class AuthSystem {
         }
 
         try {
-            // Пробуем найти пользователя в таблице profiles
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('username', username)
-                .single();
+            if (!supabase) {
+                throw new Error('Supabase not initialized');
+            }
 
-            if (profileError || !profile) {
-                this.showError('Пользователь не найден');
+            // Для теста: если введен admin/admin123, пропускаем
+            if (username === 'admin' && password === 'admin123') {
+                console.log('Test login successful');
+                this.showError('✅ Вход выполнен (тестовый режим)', 'success');
+                sessionStorage.setItem('user_id', 'test-id');
+                sessionStorage.setItem('user_username', 'admin');
+                sessionStorage.setItem('user_role', 'admin');
+                
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1000);
                 return;
             }
 
-            // Входим с email из профиля
+            // Настоящая аутентификация
             const { data, error } = await supabase.auth.signInWithPassword({
-                email: profile.email,
+                email: `${username}@bobix.com`,
                 password: password
             });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Login error:', error);
+                throw error;
+            }
 
+            console.log('Login successful:', data);
             this.currentUser = data.user;
-            await this.getUserRole(data.user.id);
             
-            // Сохраняем данные в sessionStorage
+            // Сохраняем в sessionStorage
             sessionStorage.setItem('user_id', data.user.id);
-            sessionStorage.setItem('user_email', profile.email);
             sessionStorage.setItem('user_username', username);
             
-            // Перенаправляем на дашборд
-            window.location.href = 'dashboard.html';
+            this.showError('✅ Вход выполнен успешно!', 'success');
+            
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 1000);
 
         } catch (error) {
+            console.error('Login failed:', error);
             this.showError('Неверный логин или пароль');
-            console.error('Login error:', error);
         }
     }
 
@@ -110,7 +149,8 @@ class AuthSystem {
         const password = document.getElementById('reg-password').value;
         const confirmPassword = document.getElementById('reg-confirm-password').value;
 
-        // Валидация
+        console.log('Registration attempt:', { username, email });
+
         if (!username || !email || !password || !confirmPassword) {
             this.showError('Заполните все поля');
             return;
@@ -127,52 +167,29 @@ class AuthSystem {
         }
 
         try {
-            // 1. Регистрация в Supabase Auth
+            if (!supabase) {
+                throw new Error('Supabase not initialized');
+            }
+
+            // Регистрация
             const { data, error } = await supabase.auth.signUp({
                 email: email,
-                password: password
+                password: password,
+                options: {
+                    data: {
+                        username: username
+                    }
+                }
             });
 
-            if (error) throw error;
+            if (error) {
+                console.error('Registration error:', error);
+                throw error;
+            }
 
-            // 2. Ждем немного, чтобы пользователь создался
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // 3. Получаем текущую сессию
-            const { data: sessionData } = await supabase.auth.getSession();
+            console.log('Registration successful:', data);
             
-            if (!sessionData.session) {
-                throw new Error('Сессия не создана');
-            }
-
-            const userId = sessionData.session.user.id;
-
-            // 4. Создаем профиль в таблице profiles
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([
-                    {
-                        id: userId,
-                        username: username,
-                        email: email,
-                        role: 'user',
-                        created_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (profileError) {
-                console.error('Profile creation error:', profileError);
-                
-                // Если ошибка "duplicate key", значит пользователь уже есть
-                if (profileError.code === '23505') {
-                    this.showError('Пользователь с таким именем или email уже существует');
-                } else {
-                    throw profileError;
-                }
-                return;
-            }
-
-            this.showError('✅ Регистрация успешна! Теперь войдите.', 'success');
+            this.showError('✅ Регистрация успешна! Проверьте email для подтверждения.', 'success');
             
             // Очищаем форму
             document.getElementById('reg-username').value = '';
@@ -180,42 +197,26 @@ class AuthSystem {
             document.getElementById('reg-password').value = '';
             document.getElementById('reg-confirm-password').value = '';
             
-            // Переключение на форму входа
+            // Переключаем на форму входа
             setTimeout(() => {
                 this.toggleFormMode();
             }, 2000);
 
         } catch (error) {
-            console.error('Registration error:', error);
+            console.error('Registration failed:', error);
             this.showError('Ошибка регистрации: ' + error.message);
-        }
-    }
-
-    async getUserRole(userId) {
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('role, username')
-                .eq('id', userId)
-                .single();
-
-            if (!error && data) {
-                this.currentRole = data.role;
-                sessionStorage.setItem('user_role', data.role);
-                sessionStorage.setItem('user_username', data.username);
-            }
-        } catch (error) {
-            console.error('Get role error:', error);
         }
     }
 
     async checkSession() {
         try {
+            if (!supabase) return;
+            
             const { data: { session } } = await supabase.auth.getSession();
             
             if (session) {
+                console.log('Session found:', session);
                 this.currentUser = session.user;
-                await this.getUserRole(session.user.id);
                 
                 // Если уже авторизован, перенаправляем
                 if (window.location.pathname.includes('index.html')) {
@@ -229,499 +230,21 @@ class AuthSystem {
 
     showError(message, type = 'error') {
         const errorElement = document.getElementById('auth-error');
-        if (!errorElement) return;
+        if (!errorElement) {
+            console.error('Error element not found');
+            return;
+        }
         
         errorElement.textContent = message;
         errorElement.className = `auth-error ${type}`;
-        errorElement.style.display = message ? 'block' : 'none';
-    }
-}
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', () => {
-    window.authSystem = new AuthSystem();
-});const SUPABASE_URL = 'https://ваш-проект.supabase.co';  // ЗАМЕНИТЕ!
-const SUPABASE_ANON_KEY = 'ваш-anon-key';  // ЗАМЕНИТЕ!
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-class AuthSystem {
-    constructor() {
-        this.currentUser = null;
-        this.currentRole = 'user';
-        this.isLoginMode = true;
-        this.init();
-    }
-
-    async init() {
-        this.setupEventListeners();
-        await this.checkSession();
-    }
-
-    setupEventListeners() {
-        // Переключение форм
-        document.getElementById('btn-switch-form').addEventListener('click', () => {
-            this.toggleFormMode();
-        });
-
-        // Отправка формы входа
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleLogin();
-        });
-
-        // Отправка формы регистрации
-        document.getElementById('register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRegister();
-        });
-    }
-
-    toggleFormMode() {
-        this.isLoginMode = !this.isLoginMode;
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const switchText = document.getElementById('switch-text');
-        const switchBtn = document.getElementById('btn-switch-form');
-
-        if (this.isLoginMode) {
-            loginForm.style.display = 'flex';
-            registerForm.style.display = 'none';
-            switchText.textContent = 'Нет аккаунта?';
-            switchBtn.textContent = 'Зарегистрироваться';
-        } else {
-            loginForm.style.display = 'none';
-            registerForm.style.display = 'flex';
-            switchText.textContent = 'Уже есть аккаунт?';
-            switchBtn.textContent = 'Войти';
-        }
-
-        this.showError('');
-    }
-
-    async handleLogin() {
-        const username = document.getElementById('login-username').value;
-        const password = document.getElementById('login-password').value;
-
-        if (!username || !password) {
-            this.showError('Заполните все поля');
-            return;
-        }
-
-        try {
-            // Пробуем найти пользователя в таблице profiles
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('username', username)
-                .single();
-
-            if (profileError || !profile) {
-                this.showError('Пользователь не найден');
-                return;
-            }
-
-            // Входим с email из профиля
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: profile.email,
-                password: password
-            });
-
-            if (error) throw error;
-
-            this.currentUser = data.user;
-            await this.getUserRole(data.user.id);
-            
-            // Сохраняем данные в sessionStorage
-            sessionStorage.setItem('user_id', data.user.id);
-            sessionStorage.setItem('user_email', profile.email);
-            sessionStorage.setItem('user_username', username);
-            
-            // Перенаправляем на дашборд
-            window.location.href = 'dashboard.html';
-
-        } catch (error) {
-            this.showError('Неверный логин или пароль');
-            console.error('Login error:', error);
-        }
-    }
-
-    async handleRegister() {
-        const username = document.getElementById('reg-username').value;
-        const email = document.getElementById('reg-email').value;
-        const password = document.getElementById('reg-password').value;
-        const confirmPassword = document.getElementById('reg-confirm-password').value;
-
-        // Валидация
-        if (!username || !email || !password || !confirmPassword) {
-            this.showError('Заполните все поля');
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            this.showError('Пароли не совпадают');
-            return;
-        }
-
-        if (password.length < 6) {
-            this.showError('Пароль должен быть не менее 6 символов');
-            return;
-        }
-
-        try {
-            // 1. Регистрация в Supabase Auth
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password
-            });
-
-            if (error) throw error;
-
-            // 2. Ждем немного, чтобы пользователь создался
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // 3. Получаем текущую сессию
-            const { data: sessionData } = await supabase.auth.getSession();
-            
-            if (!sessionData.session) {
-                throw new Error('Сессия не создана');
-            }
-
-            const userId = sessionData.session.user.id;
-
-            // 4. Создаем профиль в таблице profiles
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([
-                    {
-                        id: userId,
-                        username: username,
-                        email: email,
-                        role: 'user',
-                        created_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (profileError) {
-                console.error('Profile creation error:', profileError);
-                
-                // Если ошибка "duplicate key", значит пользователь уже есть
-                if (profileError.code === '23505') {
-                    this.showError('Пользователь с таким именем или email уже существует');
-                } else {
-                    throw profileError;
-                }
-                return;
-            }
-
-            this.showError('✅ Регистрация успешна! Теперь войдите.', 'success');
-            
-            // Очищаем форму
-            document.getElementById('reg-username').value = '';
-            document.getElementById('reg-email').value = '';
-            document.getElementById('reg-password').value = '';
-            document.getElementById('reg-confirm-password').value = '';
-            
-            // Переключение на форму входа
-            setTimeout(() => {
-                this.toggleFormMode();
-            }, 2000);
-
-        } catch (error) {
-            console.error('Registration error:', error);
-            this.showError('Ошибка регистрации: ' + error.message);
-        }
-    }
-
-    async getUserRole(userId) {
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('role, username')
-                .eq('id', userId)
-                .single();
-
-            if (!error && data) {
-                this.currentRole = data.role;
-                sessionStorage.setItem('user_role', data.role);
-                sessionStorage.setItem('user_username', data.username);
-            }
-        } catch (error) {
-            console.error('Get role error:', error);
-        }
-    }
-
-    async checkSession() {
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (session) {
-                this.currentUser = session.user;
-                await this.getUserRole(session.user.id);
-                
-                // Если уже авторизован, перенаправляем
-                if (window.location.pathname.includes('index.html')) {
-                    window.location.href = 'dashboard.html';
-                }
-            }
-        } catch (error) {
-            console.error('Session check error:', error);
-        }
-    }
-
-    showError(message, type = 'error') {
-        const errorElement = document.getElementById('auth-error');
-        if (!errorElement) return;
+        errorElement.style.display = 'block';
         
-        errorElement.textContent = message;
-        errorElement.className = `auth-error ${type}`;
-        errorElement.style.display = message ? 'block' : 'none';
+        console.log(`Error shown (${type}):`, message);
     }
 }
 
-// Инициализация при загрузке
+// Инициализация
 document.addEventListener('DOMContentLoaded', () => {
-    window.authSystem = new AuthSystem();
-});const SUPABASE_URL = 'https://ваш-проект.supabase.co';  // ЗАМЕНИТЕ!
-const SUPABASE_ANON_KEY = 'ваш-anon-key';  // ЗАМЕНИТЕ!
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-class AuthSystem {
-    constructor() {
-        this.currentUser = null;
-        this.currentRole = 'user';
-        this.isLoginMode = true;
-        this.init();
-    }
-
-    async init() {
-        this.setupEventListeners();
-        await this.checkSession();
-    }
-
-    setupEventListeners() {
-        // Переключение форм
-        document.getElementById('btn-switch-form').addEventListener('click', () => {
-            this.toggleFormMode();
-        });
-
-        // Отправка формы входа
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleLogin();
-        });
-
-        // Отправка формы регистрации
-        document.getElementById('register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleRegister();
-        });
-    }
-
-    toggleFormMode() {
-        this.isLoginMode = !this.isLoginMode;
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const switchText = document.getElementById('switch-text');
-        const switchBtn = document.getElementById('btn-switch-form');
-
-        if (this.isLoginMode) {
-            loginForm.style.display = 'flex';
-            registerForm.style.display = 'none';
-            switchText.textContent = 'Нет аккаунта?';
-            switchBtn.textContent = 'Зарегистрироваться';
-        } else {
-            loginForm.style.display = 'none';
-            registerForm.style.display = 'flex';
-            switchText.textContent = 'Уже есть аккаунт?';
-            switchBtn.textContent = 'Войти';
-        }
-
-        this.showError('');
-    }
-
-    async handleLogin() {
-        const username = document.getElementById('login-username').value;
-        const password = document.getElementById('login-password').value;
-
-        if (!username || !password) {
-            this.showError('Заполните все поля');
-            return;
-        }
-
-        try {
-            // Пробуем найти пользователя в таблице profiles
-            const { data: profile, error: profileError } = await supabase
-                .from('profiles')
-                .select('email')
-                .eq('username', username)
-                .single();
-
-            if (profileError || !profile) {
-                this.showError('Пользователь не найден');
-                return;
-            }
-
-            // Входим с email из профиля
-            const { data, error } = await supabase.auth.signInWithPassword({
-                email: profile.email,
-                password: password
-            });
-
-            if (error) throw error;
-
-            this.currentUser = data.user;
-            await this.getUserRole(data.user.id);
-            
-            // Сохраняем данные в sessionStorage
-            sessionStorage.setItem('user_id', data.user.id);
-            sessionStorage.setItem('user_email', profile.email);
-            sessionStorage.setItem('user_username', username);
-            
-            // Перенаправляем на дашборд
-            window.location.href = 'dashboard.html';
-
-        } catch (error) {
-            this.showError('Неверный логин или пароль');
-            console.error('Login error:', error);
-        }
-    }
-
-    async handleRegister() {
-        const username = document.getElementById('reg-username').value;
-        const email = document.getElementById('reg-email').value;
-        const password = document.getElementById('reg-password').value;
-        const confirmPassword = document.getElementById('reg-confirm-password').value;
-
-        // Валидация
-        if (!username || !email || !password || !confirmPassword) {
-            this.showError('Заполните все поля');
-            return;
-        }
-
-        if (password !== confirmPassword) {
-            this.showError('Пароли не совпадают');
-            return;
-        }
-
-        if (password.length < 6) {
-            this.showError('Пароль должен быть не менее 6 символов');
-            return;
-        }
-
-        try {
-            // 1. Регистрация в Supabase Auth
-            const { data, error } = await supabase.auth.signUp({
-                email: email,
-                password: password
-            });
-
-            if (error) throw error;
-
-            // 2. Ждем немного, чтобы пользователь создался
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // 3. Получаем текущую сессию
-            const { data: sessionData } = await supabase.auth.getSession();
-            
-            if (!sessionData.session) {
-                throw new Error('Сессия не создана');
-            }
-
-            const userId = sessionData.session.user.id;
-
-            // 4. Создаем профиль в таблице profiles
-            const { error: profileError } = await supabase
-                .from('profiles')
-                .insert([
-                    {
-                        id: userId,
-                        username: username,
-                        email: email,
-                        role: 'user',
-                        created_at: new Date().toISOString()
-                    }
-                ]);
-
-            if (profileError) {
-                console.error('Profile creation error:', profileError);
-                
-                // Если ошибка "duplicate key", значит пользователь уже есть
-                if (profileError.code === '23505') {
-                    this.showError('Пользователь с таким именем или email уже существует');
-                } else {
-                    throw profileError;
-                }
-                return;
-            }
-
-            this.showError('✅ Регистрация успешна! Теперь войдите.', 'success');
-            
-            // Очищаем форму
-            document.getElementById('reg-username').value = '';
-            document.getElementById('reg-email').value = '';
-            document.getElementById('reg-password').value = '';
-            document.getElementById('reg-confirm-password').value = '';
-            
-            // Переключение на форму входа
-            setTimeout(() => {
-                this.toggleFormMode();
-            }, 2000);
-
-        } catch (error) {
-            console.error('Registration error:', error);
-            this.showError('Ошибка регистрации: ' + error.message);
-        }
-    }
-
-    async getUserRole(userId) {
-        try {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('role, username')
-                .eq('id', userId)
-                .single();
-
-            if (!error && data) {
-                this.currentRole = data.role;
-                sessionStorage.setItem('user_role', data.role);
-                sessionStorage.setItem('user_username', data.username);
-            }
-        } catch (error) {
-            console.error('Get role error:', error);
-        }
-    }
-
-    async checkSession() {
-        try {
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (session) {
-                this.currentUser = session.user;
-                await this.getUserRole(session.user.id);
-                
-                // Если уже авторизован, перенаправляем
-                if (window.location.pathname.includes('index.html')) {
-                    window.location.href = 'dashboard.html';
-                }
-            }
-        } catch (error) {
-            console.error('Session check error:', error);
-        }
-    }
-
-    showError(message, type = 'error') {
-        const errorElement = document.getElementById('auth-error');
-        if (!errorElement) return;
-        
-        errorElement.textContent = message;
-        errorElement.className = `auth-error ${type}`;
-        errorElement.style.display = message ? 'block' : 'none';
-    }
-}
-
-// Инициализация при загрузке
-document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing AuthSystem...');
     window.authSystem = new AuthSystem();
 });
