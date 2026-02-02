@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOBIX EMPIRE - Панель управления</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/themes.css">
+</head>
+<body class="theme-default">
+    <div class="gui-container" id="gui-container">
+        <!-- Шапка -->
+        <header class="gui-header">
+            <div class="header-title">🌸 BOBIX EMPIRE GUI</div>
+            <div class="user-info">
+                <div class="user-avatar" id="user-avatar">U</div>
+                <div class="user-name" id="user-name">Загрузка...</div>
+                <button class="logout-btn" id="btn-logout">Выйти</button>
+            </div>
+        </header>
+
+        <!-- Навигация -->
+        <nav class="gui-sidebar">
+            <div class="nav-section">
+                <div class="section-title">🌱 Основное</div>
+                <button class="nav-btn active" data-tab="dashboard">
+                    <span class="nav-icon">📊</span> Панель управления
+                </button>
+                <button class="nav-btn" data-tab="players">
+                    <span class="nav-icon">👥</span> Игроки
+                </button>
+            </div>
+
+            <div class="nav-section" id="admin-section" style="display: none;">
+                <div class="section-title">🔧 Администрирование</div>
+                <button class="nav-btn" data-tab="admin-panel">
+                    <span class="nav-icon">⚙️</span> Панель админа
+                </button>
+            </div>
+
+            <div class="nav-section" id="owner-section" style="display: none;">
+                <div class="section-title">👑 Владелец</div>
+                <button class="nav-btn" data-tab="owner-panel">
+                    <span class="nav-icon">👑</span> Панель владельца
+                </button>
+            </div>
+        </nav>
+
+        <!-- Основной контент -->
+        <main class="gui-content" id="main-content">
+            <!-- Дашборд -->
+            <div class="tab-content active" id="dashboard-tab">
+                <h1>Добро пожаловать в BOBIX EMPIRE</h1>
+                <p>Ваша роль: <span id="user-role-display"></span></p>
+            </div>
+
+            <!-- Управление игроками -->
+            <div class="tab-content" id="players-tab">
+                <div class="content-header">
+                    <h1>👥 Управление игроками</h1>
+                    <button class="control-btn" id="btn-add-player">
+                        <span>➕</span> Добавить игрока
+                    </button>
+                </div>
+
+                <!-- Форма добавления игрока -->
+                <div class="gui-card" id="add-player-form" style="display: none;">
+                    <h3>Добавить нового игрока</h3>
+                    <input type="text" class="gui-input" id="player-roblox" 
+                           placeholder="Ник в Roblox">
+                    <input type="text" class="gui-input" id="player-discord" 
+                           placeholder="Ник в Discord">
+                    <input type="text" class="gui-input" id="player-nickname" 
+                           placeholder="Внутренний никнейм">
+                    <button class="control-btn" id="btn-save-player">
+                        <span>💾</span> Сохранить
+                    </button>
+                </div>
+
+                <!-- Список игроков -->
+                <div id="players-list" class="players-grid"></div>
+            </div>
+
+            <!-- Панель админа -->
+            <div class="tab-content" id="admin-panel-tab">
+                <h1>🔧 Панель администратора</h1>
+                <p>Только для администраторов</p>
+                <!-- Здесь будут функции админа -->
+            </div>
+
+            <!-- Панель владельца -->
+            <div class="tab-content" id="owner-panel-tab">
+                <h1>👑 Панель владельца</h1>
+                
+                <!-- Назначение администраторов -->
+                <div class="gui-card">
+                    <h3>Назначить администратора</h3>
+                    <select class="gui-dropdown" id="user-select">
+                        <option value="">Выберите пользователя</option>
+                    </select>
+                    <button class="control-btn" id="btn-make-admin">
+                        <span>👑</span> Назначить администратором
+                    </button>
+                </div>
+
+                <!-- Список администраторов -->
+                <div class="gui-card">
+                    <h3>Текущие администраторы</h3>
+                    <div id="admin-list"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="scripts/dashboard.js"></script>
+</body>
+</html>
