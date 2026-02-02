@@ -3,53 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOBIX EMPIRE - Авторизация</title>
+    <title>BOBIX EMPIRE - Вход</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="/styles/main.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .auth-box {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+        h1 {
+            text-align: center;
+            color: #8a2be2;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #8a2be2;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #8a2be2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #7b1fa2;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .switch {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .switch-btn {
+            background: none;
+            border: none;
+            color: #8a2be2;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .switch-btn:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
-    <div class="auth-container">
-        <div class="auth-box">
-            <h1 class="auth-title">🌸 BOBIX EMPIRE</h1>
-            
-            <div id="auth-error" class="auth-error"></div>
-            
-            <!-- Форма входа -->
-            <form id="login-form" class="auth-form">
-                <input type="text" class="auth-input" id="login-username" 
-                       placeholder="Имя пользователя" required>
-                <input type="password" class="auth-input" id="login-password" 
-                       placeholder="Пароль" required>
-                <button type="submit" class="auth-btn" id="btn-login">
-                    <span>🔑</span> Войти
-                </button>
-            </form>
-            
-            <!-- Форма регистрации -->
-            <form id="register-form" class="auth-form" style="display: none;">
-                <input type="text" class="auth-input" id="reg-username" 
-                       placeholder="Имя пользователя" required>
-                <input type="email" class="auth-input" id="reg-email" 
-                       placeholder="Email" required>
-                <input type="password" class="auth-input" id="reg-password" 
-                       placeholder="Пароль (минимум 6 символов)" required>
-                <input type="password" class="auth-input" id="reg-confirm-password" 
-                       placeholder="Подтвердите пароль" required>
-                <button type="submit" class="auth-btn" id="btn-register">
-                    <span>📝</span> Зарегистрироваться
-                </button>
-            </form>
-            
-            <div class="auth-switch">
-                <span id="switch-text">Нет аккаунта?</span>
-                <button class="auth-switch-btn" id="btn-switch-form">
-                    Зарегистрироваться
-                </button>
+    <div class="auth-box">
+        <h1>🌸 BOBIX EMPIRE</h1>
+        
+        <div id="message" class="error"></div>
+        
+        <!-- Форма входа -->
+        <form id="login-form">
+            <div class="form-group">
+                <input type="text" id="login-username" placeholder="Имя пользователя" required>
             </div>
+            <div class="form-group">
+                <input type="password" id="login-password" placeholder="Пароль" required>
+            </div>
+            <button type="submit">Войти</button>
+        </form>
+        
+        <!-- Форма регистрации -->
+        <form id="register-form" style="display: none;">
+            <div class="form-group">
+                <input type="text" id="reg-username" placeholder="Имя пользователя" required>
+            </div>
+            <div class="form-group">
+                <input type="email" id="reg-email" placeholder="Email" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="reg-password" placeholder="Пароль (минимум 6 символов)" required>
+            </div>
+            <div class="form-group">
+                <input type="password" id="reg-confirm-password" placeholder="Подтвердите пароль" required>
+            </div>
+            <button type="submit">Зарегистрироваться</button>
+        </form>
+        
+        <div class="switch">
+            <span id="switch-text">Нет аккаунта?</span>
+            <button class="switch-btn" id="btn-switch">Зарегистрироваться</button>
         </div>
     </div>
 
-    <!-- Удаляем лишние скрипты, оставляем только auth.js -->
-    <script src="/scripts/auth.js"></script>
+    <script>
+        // Настройки Supabase
+        const SUPABASE_URL = 'https://dkyqegxdcerlqnfvodjd.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRreXFlZ3hkY2VybHFuZnZvZGpkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNTc2NzQsImV4cCI6MjA4NTYzMzY3NH0.n6KO-IQMZboeOMCnJQw6gAs8DdWFDZpevAOWBQrxFWA';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let isLoginMode = true;
+        
+        // Переключение форм
+        document.getElementById('btn-switch').onclick = function() {
+            isLoginMode = !isLoginMode;
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const switchText = document.getElementById('switch-text');
+            
+            if (isLoginMode) {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                switchText.textContent = 'Нет аккаунта?';
+                this.textContent = 'Зарегистрироваться';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                switchText.textContent = 'Уже есть аккаунт?';
+                this.textContent = 'Войти';
+            }
+            
+            document.getElementById('message').style.display = 'none';
+        };
+        
+        // Вход
+        document.getElementById('login-form').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            
+            if (!username || !password) {
+                showMessage('Заполните все поля', 'error');
+                return;
+            }
+            
+            // Тестовый аккаунт
+            if (username === 'admin' && password === 'admin123') {
+                localStorage.setItem('user', JSON.stringify({
+                    username: 'admin',
+                    role: 'admin',
+                    email: 'admin@bobix.com'
+                }));
+                showMessage('✅ Вход выполнен', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+                return;
+            }
+            
+            try {
+                // Пробуем войти через Supabase
+                const email = username.includes('@') ? username : username + '@bobix.com';
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                // Сохраняем пользователя
+                localStorage.setItem('user', JSON.stringify({
+                    id: data.user.id,
+                    email: data.user.email,
+                    username: username
+                }));
+                
+                showMessage('✅ Вход выполнен', 'success');
+                setTimeout(() => window.location.href = 'dashboard.html', 1000);
+                
+            } catch (error) {
+                showMessage('Неверный логин или пароль', 'error');
+            }
+        };
+        
+        // Регистрация
+        document.getElementById('register-form').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+            
+            if (!username || !email || !password || !confirmPassword) {
+                showMessage('Заполните все поля', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage('Пароли не совпадают', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Пароль должен быть не менее 6 символов', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                showMessage('✅ Регистрация успешна! Теперь войдите.', 'success');
+                
+                // Очищаем форму
+                document.getElementById('reg-username').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+                document.getElementById('reg-confirm-password').value = '';
+                
+                // Переключаем на вход
+                setTimeout(() => {
+                    document.getElementById('btn-switch').click();
+                }, 2000);
+                
+            } catch (error) {
+                showMessage('Ошибка регистрации: ' + error.message, 'error');
+            }
+        };
+        
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = type;
+            msg.style.display = 'block';
+        }
+    </script>
 </body>
 </html>
