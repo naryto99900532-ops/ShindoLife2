@@ -6,19 +6,6 @@
     <title>BOBIX EMPIRE - Авторизация</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="/styles/main.css">
-    <style>
-        /* Добавьте inline стили на случай если main.css не загрузится */
-        body { 
-            font-family: Arial, sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            margin: 0;
-        }
-    </style>
 </head>
 <body>
     <div class="auth-container">
@@ -62,45 +49,7 @@
         </div>
     </div>
 
-    <!-- Используем относительный путь -->
+    <!-- Удаляем лишние скрипты, оставляем только auth.js -->
     <script src="/scripts/auth.js"></script>
-    
-    <!-- Fallback скрипт на случай если файл не найден -->
-    <script>
-        // Проверяем, загрузился ли основной скрипт
-        setTimeout(() => {
-            if (!window.authSystem) {
-                console.warn('Основной скрипт не загрузился, загружаем fallback');
-                loadFallbackAuth();
-            }
-        }, 1000);
-        
-        function loadFallbackAuth() {
-            const script = document.createElement('script');
-            script.innerHTML = `
-                console.log('Загружен fallback скрипт');
-                // Простая логика аутентификации
-                document.getElementById('btn-switch-form').onclick = function() {
-                    const loginForm = document.getElementById('login-form');
-                    const registerForm = document.getElementById('register-form');
-                    const switchText = document.getElementById('switch-text');
-                    const switchBtn = this;
-                    
-                    if (loginForm.style.display !== 'none') {
-                        loginForm.style.display = 'none';
-                        registerForm.style.display = 'flex';
-                        switchText.textContent = 'Уже есть аккаунт?';
-                        switchBtn.textContent = 'Войти';
-                    } else {
-                        loginForm.style.display = 'flex';
-                        registerForm.style.display = 'none';
-                        switchText.textContent = 'Нет аккаунта?';
-                        switchBtn.textContent = 'Зарегистрироваться';
-                    }
-                };
-            `;
-            document.body.appendChild(script);
-        }
-    </script>
 </body>
 </html>
